@@ -39,7 +39,7 @@ Tokens are `identity.HMAC_SHA256(AUTH_SECRET, identity)`. The `admin` identity c
 python -c "import hashlib,hmac,os; from dotenv import load_dotenv; load_dotenv(); identity='admin'; print(identity+'.'+hmac.new(os.environ['AUTH_SECRET'].encode(),identity.encode(),hashlib.sha256).hexdigest())"
 ```
 
-`POST /shows` body: `{"name":"friday-night","seats":["A1","A2"],"price_paise":25000,"per_user_limit":4}`.
+`POST /shows` body: `{"name":"friday-night","seats":["A1","A2"],"price":25000,"per_user_limit":4}`. `price` is an integer number of paise.
 
 `POST /shows/{id}/reserve` body: `{"seats":["A1"],"idempotency_key":"checkout-123"}`. The user identity comes only from the verified bearer token. Requests for multiple seats are all-or-nothing. Conflicts return 409 with `seat-taken`, `per-user-limit`, or `idempotency-key-reuse`. Repeating the same key and seat set returns the original reservation; changing the seat set with the same key returns 409. `POST /reservations/{id}/cancel` is owner-only and can be repeated; seats are released transactionally. There are no timed holds, so `held` is always zero. Prices and totals use integer paise.
 

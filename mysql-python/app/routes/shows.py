@@ -20,7 +20,7 @@ def create_show(body: CreateShow, _: str = Depends(require_admin), database: Dat
     with database.connection() as connection, connection.transaction():
         connection.execute(
             "INSERT INTO shows (id, name, price_paise, per_user_limit) VALUES (%s, %s, %s, %s)",
-            (show_id, body.name, body.price_paise, body.per_user_limit),
+            (show_id, body.name, body.price, body.per_user_limit),
         )
         connection.executemany(
             "INSERT INTO seats (show_id, label, status) VALUES (%s, %s, 'available')",
@@ -30,7 +30,7 @@ def create_show(body: CreateShow, _: str = Depends(require_admin), database: Dat
     return {
         "id": show_id,
         "name": body.name,
-        "price_paise": body.price_paise,
+        "price": body.price,
         "per_user_limit": body.per_user_limit,
         "seats": [{"label": seat, "status": "available"} for seat in sorted(body.seats)],
     }
@@ -51,7 +51,7 @@ def get_show(show_id: str, database: DatabasePool = Depends(get_database)):
     return {
         "id": show["id"],
         "name": show["name"],
-        "price_paise": show["price_paise"],
+        "price": show["price_paise"],
         "per_user_limit": show["per_user_limit"],
         "total_seats": len(seats),
         "counts": counts,

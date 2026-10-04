@@ -8,7 +8,7 @@ from app.config import DEFAULT_PER_USER_LIMIT
 class CreateShow(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     seats: list[str] = Field(min_length=1, max_length=100000)
-    price_paise: int = Field(ge=0)
+    price: int = Field(ge=0, description="Ticket price in integer paise")
     per_user_limit: int = Field(default=DEFAULT_PER_USER_LIMIT, gt=0)
 
 
