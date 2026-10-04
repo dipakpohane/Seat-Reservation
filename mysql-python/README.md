@@ -2,6 +2,8 @@
 
 A transactional JSON API for assigned seats. MySQL/InnoDB is the system of record. This project lives separately from the DSA workspace.
 
+For a beginner-friendly code map and instructions on following or adding an endpoint, see [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md).
+
 ## Use your local MySQL
 
 Install MySQL Server 8.0+ and make sure its service is running. In MySQL Workbench or your SQL client, create a database and a least-privilege application user (replace the password with one you choose locally):
@@ -57,17 +59,12 @@ This races distinct users on one hot seat, sends five concurrent reservations fo
 
 ## GitHub and deployment
 
-The Dockerfile listens on `$PORT`; `render.yaml` describes an API service but expects MySQL connection variables from an external MySQL provider. To publish this folder, create an empty GitHub repository, then run from this directory:
+The Dockerfile listens on `$PORT`; `render.yaml` describes an API service but expects MySQL connection variables from an external MySQL provider. This project is published inside the `mysql-python/` folder of the Seat-Reservation repository. See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for the module map. To publish future changes, run these commands from the repository root:
 
 ```powershell
-git init
-git config user.name "YOUR NAME"
-git config user.email "YOUR GITHUB EMAIL"
-git add .
-git commit -m "Build MySQL seat reservation API"
-git branch -M main
-git remote add origin https://github.com/YOUR_NAME/YOUR_REPOSITORY.git
-git push -u origin main
+git add mysql-python
+git commit -m "Update MySQL reservation API"
+git push origin main
 ```
 
-Complete GitHub authentication in the browser/credential manager when Git prompts. Do not put a password or token in the remote URL. Configure the deployment service with the same `MYSQL_*` variables, a strong `AUTH_SECRET`, and `APP_ENV=production`; health-check `/ready`. A live URL requires a reachable external MySQL instance and a hosting account.
+Configure deployment with the same `MYSQL_*` variables, a strong `AUTH_SECRET`, and `APP_ENV=production`; health-check `/ready`. A live URL requires a reachable external MySQL instance and a hosting account.

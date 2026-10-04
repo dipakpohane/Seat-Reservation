@@ -1,0 +1,1 @@
+"""Seat reservation API package."""
