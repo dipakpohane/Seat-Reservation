@@ -31,6 +31,10 @@ uvicorn app.main:app --reload
 
 API: `http://localhost:8000`; docs: `/docs`; liveness: `/live`; MySQL-checked readiness: `/ready`; Prometheus metrics: `/metrics`.
 
+## Click-To-Book Demo
+
+After running `setup_local.py` once to configure MySQL, double-click `BookTicket.bat`. It starts the API if needed, creates one local demo cricket match on first use, shows available seats, and asks for a buyer name and seat label. Later clicks reuse the same match so a confirmed seat cannot be booked twice. The generated `demo_show_id.txt` is local-only and ignored by Git.
+
 If you do not want to use your installed MySQL for a local demo, `docker compose up --build` starts an isolated MySQL 8 container and API. That container is only an optional demo and does not connect to your existing MySQL instance.
 
 ## Authentication and endpoints
