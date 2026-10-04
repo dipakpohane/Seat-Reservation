@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from app.auth import authenticate
 from app.database import DatabasePool, get_database
 from app.models import ReserveSeats
-from app.services import increment_metric, reservation_payload
+from app.services import create_ticket_qr, increment_metric, reservation_payload
 
 router = APIRouter()
 
@@ -68,6 +68,11 @@ def reserve(show_id: str, body: ReserveSeats, identity: str = Depends(authentica
                         "VALUES (%s, %s, %s, %s, %s, %s, %s, 'confirmed')",
                         (reservation_id, show_id, identity, body.idempotency_key, request_hash, requested_json, amount),
                     )
+                    qr_token_hash, qr_image_png = create_ticket_qr(reservation_id)
+                    connection.execute(
+                        "INSERT INTO ticket_qr_codes (reservation_id, token_hash, image_png) VALUES (%s, %s, %s)",
+                        (reservation_id, qr_token_hash, qr_image_png),
+                    )
                     updated = connection.execute(
                         f"UPDATE seats SET status = 'confirmed', reservation_id = %s "
                         f"WHERE show_id = %s AND label IN ({marks}) AND status = 'available'",
@@ -83,6 +88,8 @@ def reserve(show_id: str, body: ReserveSeats, identity: str = Depends(authentica
                         "seats": requested,
                         "amount_paise": amount,
                         "status": "confirmed",
+                        "ticket_qr_url": f"/reservations/{reservation_id}/qr",
+                        "checked_in": False,
                     }
 
     if declined:
@@ -109,6 +116,12 @@ def cancel_reservation(reservation_id: str, identity: str = Depends(authenticate
         row = connection.execute("SELECT * FROM reservations WHERE id = %s FOR UPDATE", (reservation_id,)).fetchone()
         if row["user_id"] != identity:
             raise HTTPException(status_code=403, detail="Only the reservation owner may cancel")
+        ticket = connection.execute(
+            "SELECT checked_in_at FROM ticket_qr_codes WHERE reservation_id = %s",
+            (reservation_id,),
+        ).fetchone()
+        if row["status"] == "confirmed" and ticket and ticket["checked_in_at"]:
+            raise HTTPException(status_code=409, detail="A checked-in ticket cannot be cancelled")
         if row["status"] == "confirmed":
             connection.execute(
                 "UPDATE seats SET status = 'available', reservation_id = NULL WHERE reservation_id = %s",

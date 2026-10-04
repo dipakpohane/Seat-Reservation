@@ -23,6 +23,7 @@ services:
       MYSQL_PASSWORD: seat-local-password
       MYSQL_DATABASE: seat_reservation
       AUTH_SECRET: local-development-secret-change-me
+      PUBLIC_BASE_URL: http://127.0.0.1:8000
       APP_ENV: development
     ports:
       - "8000:8000"

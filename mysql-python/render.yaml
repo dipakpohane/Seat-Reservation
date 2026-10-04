@@ -19,3 +19,5 @@ services:
         sync: false
       - key: MYSQL_DATABASE
         value: seat_reservation
+      - key: PUBLIC_BASE_URL
+        sync: false

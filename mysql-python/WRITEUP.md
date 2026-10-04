@@ -12,6 +12,7 @@ This status table separates implemented behavior from measured evidence. Do not 
 | Idempotency and changed-body rejection | Passed in local concurrent smoke test | Eight concurrent retries returned one reservation ID; reusing the key with different seats returned `409 idempotency-key-reuse`. |
 | Partial multi-seat requests | Passed; all-or-nothing | Asking for a taken seat and a free seat returned 409 and left the free seat available. |
 | Cancellation and owner identity | Passed in local smoke test | Non-owner received 403; owner cancellation marked the reservation cancelled and restored its seat to available. Cancellation is explicit; there are no timed holds. |
+| Ticket QR and verification | Passed locally against MySQL | PNG persisted and retrieved as `image/png`; owner-only retrieval, valid scan, one-time admin check-in, repeated-check-in 409, checked-in cancellation 409, and cancelled-ticket invalidation passed. The click-to-book client saved a PNG and its verification URL returned valid. Existing reservations were backfilled at startup. |
 | Token-derived identity / body spoofing | Implemented and locally checked | Reservation user ID comes from an HMAC-signed bearer token; a request-body `user_id` is ignored. This sample HMAC format is not a production identity provider. |
 | Seat counts reconcile | Passed after the 500-request burst | Final test show state was 3 available + 0 held + 6 confirmed = 9 total. The show read uses a repeatable-read transaction; mutations are transactionally committed. |
 | Health endpoints | Implemented; readiness observed healthy locally | `/live` is liveness; `/ready` executes `SELECT 1` and returns 503 on dependency errors. Local `/ready` returned 200. A deliberate database-outage test remains to be done. |
@@ -28,6 +29,12 @@ The 500-request local run printed: 201 responses = 16 (including the test cancel
 ### Money Contract
 
 The public show field is `price_paise`, matching the assignment. It accepts only JSON integers, including zero, and rejects negative values, floats, numeric strings, and values large enough to overflow a 100-seat signed BIGINT total. Reservation amounts are integer multiplication only; no floating-point money arithmetic is used.
+
+### QR Ticket Lifecycle
+
+After a reservation is inserted, a signed token and PNG are generated before the same MySQL transaction commits. `ticket_qr_codes` stores the reservation ID, token hash, PNG bytes, creation time, and optional check-in timestamp. The raw ticket token is present only inside the QR image/URL, not stored as a separate plaintext database field. `GET /reservations/{id}/qr` is owner-only. `GET /tickets/verify/{code}` checks the signature, stored token hash, and current reservation status. An admin can check in once; the show-row lock plus conditional timestamp update rejects duplicate scans. Cancellation makes verification return `valid: false`; checked-in reservations cannot be cancelled. QR verification URL paths are redacted in structured application logs, and Uvicorn access logging is disabled to avoid logging the signed token.
+
+Local test result: the QR lifecycle and click-client PNG flow passed against MySQL on 2026-10-04. The migration check found 37 reservations, 37 stored QR images, and zero missing QR rows. The QR URL uses `PUBLIC_BASE_URL`; production must set this to the public API origin.
 
 ## Atomic decision
 

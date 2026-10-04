@@ -35,11 +35,15 @@ A successful booking returns HTTP `201` and a response like:
 	"user_id": "fan-1",
 	"seats": ["A1"],
 	"amount_paise": 25000,
-	"status": "confirmed"
+	"status": "confirmed",
+	"ticket_qr_url": "/reservations/<generated-reservation-id>/qr",
+	"checked_in": false
 }
 ```
 
-The click script displays those confirmation details in its console. `25000` is integer paise (Rs 250). This demo confirms a reservation only; it does not collect payment or issue an actual cricket-stadium/BookMyShow ticket.
+The click script displays those confirmation details in its console. The response also includes `ticket_qr_url`; the click script downloads and opens the PNG stored for that reservation. `25000` is integer paise (Rs 250). This is a verifiable local reservation QR, not a paid cricket-stadium/BookMyShow ticket.
+
+The buyer can retrieve the image with `GET /reservations/{reservation_id}/qr` and their bearer token. Scanning it opens `GET /tickets/verify/{ticket_code}`. A confirmed reservation verifies as valid; after cancellation the same QR verifies as invalid. An admin can check a ticket in once with `POST /tickets/verify/{ticket_code}/check-in`; repeating check-in returns 409. Checked-in tickets cannot be cancelled. QR PNGs and check-in timestamps are stored in `ticket_qr_codes`, linked to reservations. Startup creates this table and backfills images for existing reservations. Set `PUBLIC_BASE_URL` to the public API URL when deployed so scanned QR links reach the verifier.
 
 ### 4. Check booked and available seats in MySQL Workbench
 
@@ -89,6 +93,23 @@ JOIN reservations AS r ON r.id = s.reservation_id
 WHERE s.show_id = @show_id AND s.status = 'confirmed'
 ORDER BY s.label;
 ```
+
+To check that a confirmed reservation has its QR image stored and see whether it has been checked in:
+
+```sql
+SELECT
+	r.id AS reservation_id,
+	r.status AS reservation_status,
+	q.token_hash,
+	OCTET_LENGTH(q.image_png) AS qr_png_bytes,
+	q.created_at AS qr_created_at,
+	q.checked_in_at
+FROM reservations AS r
+JOIN ticket_qr_codes AS q ON q.reservation_id = r.id
+WHERE r.id = 'paste-reservation-id-here';
+```
+
+The PNG is stored in the database; the QR text contains a signed verification URL. Keep `AUTH_SECRET` unchanged or previously generated QR signatures will no longer verify.
 
 ### 5. Cancellation and common outcomes
 

@@ -80,6 +80,7 @@ def main() -> None:
             "MYSQL_DATABASE=" + database_name,
             "DB_POOL_SIZE=" + (settings.get("DB_POOL_SIZE") or "20"),
             "AUTH_SECRET=" + app_secret,
+            "PUBLIC_BASE_URL=" + (settings.get("PUBLIC_BASE_URL") or "http://127.0.0.1:8000"),
             "APP_ENV=development",
             "",
         ]),

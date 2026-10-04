@@ -5,6 +5,7 @@ import subprocess
 import sys
 import time
 import uuid
+import webbrowser
 from pathlib import Path
 
 import httpx
@@ -106,6 +107,23 @@ def main() -> int:
                 print(f"Match: {show['name']}")
                 print(f"Seat: {', '.join(booking['seats'])}")
                 print(f"Price: {booking['amount_paise']} paise")
+                qr_response = client.get(
+                    BASE_URL + booking["ticket_qr_url"],
+                    headers={"Authorization": f"Bearer {token_for(buyer)}"},
+                )
+                qr_response.raise_for_status()
+                ticket_dir = ROOT / "tickets"
+                ticket_dir.mkdir(exist_ok=True)
+                qr_path = ticket_dir / f"{booking['reservation_id']}.png"
+                qr_path.write_bytes(qr_response.content)
+                print(f"Ticket QR saved: {qr_path}")
+                try:
+                    if os.name == "nt":
+                        os.startfile(qr_path)
+                    else:
+                        webbrowser.open(qr_path.as_uri())
+                except (AttributeError, OSError):
+                    print("Open the saved PNG with an image viewer to scan the ticket.")
                 return 0
 
             try:

@@ -48,6 +48,14 @@ SCHEMA = [
         name VARCHAR(100) PRIMARY KEY,
         value BIGINT NOT NULL DEFAULT 0
     ) ENGINE=InnoDB""",
+    """CREATE TABLE IF NOT EXISTS ticket_qr_codes (
+        reservation_id CHAR(36) PRIMARY KEY,
+        token_hash CHAR(64) NOT NULL UNIQUE,
+        image_png LONGBLOB NOT NULL,
+        created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        checked_in_at TIMESTAMP(6) NULL,
+        CONSTRAINT fk_ticket_qr_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id)
+    ) ENGINE=InnoDB""",
 ]
 
 
@@ -139,10 +147,26 @@ class DatabasePool:
 
 
 def create_schema(database: DatabasePool) -> None:
-    """Create missing tables at app startup."""
+    """Create missing tables and add QR images to existing reservations."""
     with database.connection() as connection:
         for statement in SCHEMA:
             connection.execute(statement)
+
+    # Backfill earlier reservations so old confirmations also have scannable tickets.
+    from app.services import create_ticket_qr
+
+    with database.connection() as connection, connection.transaction():
+        missing = connection.execute(
+            "SELECT r.id FROM reservations r "
+            "LEFT JOIN ticket_qr_codes q ON q.reservation_id = r.id "
+            "WHERE q.reservation_id IS NULL"
+        ).fetchall()
+        for reservation in missing:
+            token_hash, image_png = create_ticket_qr(reservation["id"])
+            connection.execute(
+                "INSERT INTO ticket_qr_codes (reservation_id, token_hash, image_png) VALUES (%s, %s, %s)",
+                (reservation["id"], token_hash, image_png),
+            )
 
 
 def get_database(request: Request) -> DatabasePool:

@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 
 from app.config import AUTH_SECRET
 from app.database import DatabasePool, create_schema
-from app.routes import health, metrics, reservations, shows
+from app.routes import health, metrics, reservations, shows, tickets
 
 
 @asynccontextmanager
@@ -29,6 +29,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Seat Reservation API", version="1.0.0", lifespan=lifespan)
 logger = logging.getLogger("seat_reservation")
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(message)s")
+# Uvicorn's default access log includes URL paths, which contain signed QR tokens.
+logging.getLogger("uvicorn.access").disabled = True
 
 
 @app.middleware("http")
@@ -42,10 +44,14 @@ async def request_logging(request: Request, call_next):
         response.headers["X-Request-ID"] = request_id
         return response
     finally:
+        log_path = request.url.path
+        if log_path.startswith("/tickets/verify/"):
+            suffix = "/check-in" if log_path.endswith("/check-in") else ""
+            log_path = "/tickets/verify/{ticket_code}" + suffix
         logger.info(json.dumps({
             "request_id": request_id,
             "method": request.method,
-            "path": request.url.path,
+            "path": log_path,
             "status": status_code,
         }))
 
@@ -54,3 +60,4 @@ app.include_router(health.router)
 app.include_router(shows.router)
 app.include_router(reservations.router)
 app.include_router(metrics.router)
+app.include_router(tickets.router)
