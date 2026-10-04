@@ -36,6 +36,16 @@ After a reservation is inserted, a signed token and PNG are generated before the
 
 Local test result: the QR lifecycle and click-client PNG flow passed against MySQL on 2026-10-04. The migration check found 37 reservations, 37 stored QR images, and zero missing QR rows. The QR URL uses `PUBLIC_BASE_URL`; production must set this to the public API origin.
 
+## How To Book A Seat
+
+1. Start MySQL and configure `.env` once with `setup_local.py`; keep the API running and confirm `/ready` returns 200.
+2. Double-click `BookTicket.bat` in the project folder.
+3. Enter a buyer name/ID, then choose a seat shown as available.
+4. On HTTP 201, note the reservation ID and seat. The script saves the QR PNG under `tickets/` and opens it.
+5. Scanning the QR opens the ticket verification endpoint. An admin bearer token can check it in once; a repeat check-in returns 409.
+
+The same booking can be done through `POST /shows/{show_id}/reserve` with a buyer bearer token, seat list, and idempotency key. The booking response includes `reservation_id`, `show_id`, `user_id`, `seats`, integer `amount_paise`, `status`, and `ticket_qr_url`.
+
 ## Atomic decision
 
 Tables use InnoDB. Every reservation transaction takes `SELECT ... FOR UPDATE` on its show row before checking the idempotency key, seat states, or user quota. Transactions for one show serialize at that row. In the same transaction, the implementation inserts the reservation, confirms every requested seat, and updates the success metric; errors roll back all changes. MySQL primary and unique keys additionally enforce unique `(show_id, seat_label)` and `(show_id, user_id, idempotency_key)`. Multi-seat requests are all-or-nothing. Since the show row is acquired before any seat or reservation changes, multi-seat requests have a deterministic lock order and cannot deadlock by locking requested seats in opposite orders. This deliberately favors understandable correctness over throughput for a single show.
