@@ -1,4 +1,4 @@
-"""Interactive local demo: start the API if needed and book one cricket seat."""
+"""Interactive local demo: start the API if needed and book one  seat."""
 
 import os
 import subprocess
