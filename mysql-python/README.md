@@ -16,6 +16,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, INDEX, REFERENCES ON seat_reservat
 
 Copy `.env.example` to `.env` and set `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`, and a private `AUTH_SECRET` to match your local MySQL account. `.env` is ignored by Git; do not commit passwords or production secrets. If your existing MySQL database or account has different names, use those values instead. The app initializes its tables on startup.
 
+For automatic local setup, run `python setup_local.py`. It asks for the MySQL root password with hidden input, creates/updates the least-privilege app user, writes fresh app credentials only to the ignored `.env`, and starts the API. It does not print the generated credentials.
+
 From this folder in PowerShell:
 
 ```powershell
