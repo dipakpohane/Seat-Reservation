@@ -141,13 +141,13 @@ python -c "import hashlib,hmac,os; from dotenv import load_dotenv; load_dotenv()
 
 ## Burst test
 
-With the API running and `.env` loaded in the shell:
+With the API running, execute the burst script from this folder. It loads `.env` automatically:
 
 ```powershell
 python burst.py http://localhost:8000 --hot-requests 20000 --workers 200
 ```
 
-This races distinct users on one hot seat, sends five concurrent reservations for one user with limit four, checks all-or-nothing requests, concurrent idempotent retries, spoofed cancellation, owner cancellation, and the final seat-count invariant. It prints the HTTP distribution and check results. Start with the default 500 hot requests on a small local MySQL instance.
+This races distinct users on one hot seat, sends five concurrent reservations for one user with limit four, checks all-or-nothing requests, concurrent idempotent retries, spoofed cancellation, owner cancellation, and the final seat-count invariant. It prints the HTTP distribution and check results. A 500-request local MySQL run passed; the 20,000-request command above has not yet been verified. Start with 500 on a small local MySQL instance.
 
 ## Metrics and logs
 
