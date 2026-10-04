@@ -43,7 +43,7 @@ def main() -> int:
             json={
                 "name": f"burst-{uuid.uuid4()}",
                 "seats": ["HOT", "LIMIT-1", "LIMIT-2", "LIMIT-3", "LIMIT-4", "LIMIT-5", "PARTIAL", "IDEMP", "CANCEL"],
-                "price": 25000,
+                "price_paise": 25000,
             },
         )
         created.raise_for_status()

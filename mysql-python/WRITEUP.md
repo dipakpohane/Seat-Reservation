@@ -6,7 +6,7 @@ This status table separates implemented behavior from measured evidence. Do not 
 
 | Requirement | Status | Evidence / remaining work |
 | --- | --- | --- |
-| Create shows with unique seats and integer paise price | Implemented; price validation checked | API calls the public field `price` (not the assignment's literal `price_paise`, per the requested rename); the database keeps `price_paise`. HTTP checks rejected negative, float, string, and overflow prices with 422. Zero and positive integers are allowed. |
+| Create shows with unique seats and integer paise price | Implemented; price validation checked | API uses the assignment's exact public field `price_paise`. HTTP checks rejected negative, float, string, and overflow prices with 422. Zero and positive integers are allowed. |
 | No double-sell for a hot seat | Passed at 500 requests | Local MySQL burst produced exactly 1 winner and 499 `409 seat-taken` results, with no 5xx or transport errors. The 20,000-request criterion has not been verified. |
 | Per-user booking limit | Passed in local concurrent smoke test | Five parallel reservations for one identity produced four confirmations and one `409 per-user-limit`. |
 | Idempotency and changed-body rejection | Passed in local concurrent smoke test | Eight concurrent retries returned one reservation ID; reusing the key with different seats returned `409 idempotency-key-reuse`. |
@@ -25,9 +25,9 @@ This status table separates implemented behavior from measured evidence. Do not 
 
 The 500-request local run printed: 201 responses = 16 (including the test cancellation reservation), 409 responses = 502, plus one expected 403 spoofed cancellation and one 200 owner cancellation. The hot seat had exactly 1 winner and 499 `seat-taken` declines. The limit, same-key retry, changed-key-body, partial request, cancellation, and final reconciliation assertions all passed. This is a bounded local MySQL check, not the requested 20,000-request deployment test.
 
-### Contract Note
+### Money Contract
 
-The requested API field was changed from `price_paise` to `price` earlier in this project. The value is still a strict JSON integer in paise, never a float; negative values and values large enough to overflow a 100-seat BIGINT total are rejected. If the evaluator requires the assignment's exact request field name, change the public field back to `price_paise` before submission.
+The public show field is `price_paise`, matching the assignment. It accepts only JSON integers, including zero, and rejects negative values, floats, numeric strings, and values large enough to overflow a 100-seat signed BIGINT total. Reservation amounts are integer multiplication only; no floating-point money arithmetic is used.
 
 ## Atomic decision
 

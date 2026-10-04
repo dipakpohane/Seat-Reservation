@@ -65,7 +65,7 @@ def get_or_create_demo_show(client: httpx.Client) -> dict:
         json={
             "name": "Local Cricket Demo",
             "seats": DEMO_SEATS,
-            "price": 25000,
+            "price_paise": 25000,
             "per_user_limit": 4,
         },
     )

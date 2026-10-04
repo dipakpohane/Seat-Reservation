@@ -12,7 +12,7 @@ MAX_PRICE_PAISE = MAX_SIGNED_BIGINT // MAX_SEATS_PER_RESERVATION
 class CreateShow(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     seats: list[str] = Field(min_length=1, max_length=100000)
-    price: int = Field(
+    price_paise: int = Field(
         strict=True,
         ge=0,
         le=MAX_PRICE_PAISE,
